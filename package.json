@@ -1,0 +1,21 @@
+{
+  "dependencies": {
+    "@serialport/parser-readline": "^9.0.0",
+    "gps": "^0.6.1",
+    "mqtt": "^4.3.7",
+    "nanoid": "^3.1.30",
+    "serialport": "^10.4.0"
+  },
+  "name": "ant_tracker_rf",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "pm2 start antennaTracker_pan_rf.js --name Pan && pm2 start antennaTracker_tilt_rf.js --name Tilt && pm2 start button.js && pm2 save"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IoTKETI/Ant_Tracker_RF.git"
+  },
+  "author": "hyeonseo son",
+  "license": "ISC",
+  "description": ""
+}
