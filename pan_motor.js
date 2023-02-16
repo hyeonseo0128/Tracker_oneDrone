@@ -53,7 +53,6 @@ let localmqtt = '';
 
 let motor_control_message = '';
 let localmqtt_message = '';
-let gps_message = '';
 
 let location_message = {}
 location_message.lat = 30.404172;
@@ -112,7 +111,7 @@ function canPortOpen() {
 
     setInterval(() => {
         localmqtt.publish(pub_motor_position_topic, (p_out * 180 / Math.PI).toString(), () => {
-            // console.log('send Motor angle to GCS value: ', p_out * 180 / Math.PI)
+            // console.log('[pan] send Motor angle to GCS value: ', p_out * 180 / Math.PI)
         });
     }, 500);
 
@@ -340,90 +339,7 @@ function localMqttConnect(host) {
         setTimeout(localMqttConnect, 1000, local_mqtt_host);
     });
 }
-//---------------------------------------------------.
-//------------- test mqtt connect ------------------
-let testmqtt = '';
-let sub_test_drone_data_topic = '/Mobius/KETI_GCS/Drone_Data/KETI_Simul_1/#';
-
-function testMqttConnect() {
-    let connectOptions = {
-        host: 'gcs.iotocean.org',
-        port: 1883,
-        protocol: "mqtt",
-        keepalive: 10,
-        clientId: 'local_' + nanoid(15),
-        protocolId: "MQTT",
-        protocolVersion: 4,
-        clean: true,
-        reconnectPeriod: 2000,
-        connectTimeout: 2000,
-        rejectUnauthorized: false
-    }
-
-    testmqtt = mqtt.connect(connectOptions);
-
-    testmqtt.on('connect', function () {
-        testmqtt.subscribe(sub_test_drone_data_topic, () => {
-            console.log('testmqtt subscribed -> ', sub_test_drone_data_topic);
-        });
-    });
-
-    testmqtt.on('message', function (topic, message) {
-        localmqtt_message = message.toString('hex');
-        // console.log("Client1 topic => " + topic);
-        // console.log("Client1 message => " + drone_message);
-
-        try {
-            let ver = localmqtt_message.substring(0, 2);
-            let sysid = '';
-            let msgid = '';
-            let base_offset = 0;
-
-            if (ver == 'fd') {//MAV ver.1
-                sysid = localmqtt_message.substring(10, 12).toLowerCase();
-                msgid = localmqtt_message.substring(18, 20) + localmqtt_message.substring(16, 18) + localmqtt_message.substring(14, 16);
-                base_offset = 28;
-            } else { //MAV ver.2
-                sysid = localmqtt_message.substring(6, 8).toLowerCase();
-                msgid = localmqtt_message.substring(10, 12).toLowerCase();
-                base_offset = 20;
-            }
-
-            let msg_id = parseInt(msgid, 16);
-
-            if (msg_id === 33) { // MAVLINK_MSG_ID_GLOBAL_POSITION_INT
-                let lat = localmqtt_message.substring(base_offset, base_offset + 8).toLowerCase().toString();
-                base_offset += 8;
-                let lon = localmqtt_message.substring(base_offset, base_offset + 8).toLowerCase();
-                base_offset += 8;
-                let alt = localmqtt_message.substring(base_offset, base_offset + 8).toLowerCase();
-                base_offset += 8;
-                let relative_alt = localmqtt_message.substring(base_offset, base_offset + 8).toLowerCase();
-
-                targetLatitude = Buffer.from(lat, 'hex').readInt32LE(0).toString() / 10000000;
-                targetLongitude = Buffer.from(lon, 'hex').readInt32LE(0).toString() / 10000000;
-                targetAltitude = Buffer.from(alt, 'hex').readInt32LE(0).toString() / 1000;
-                targetRelativeAltitude = Buffer.from(relative_alt, 'hex').readInt32LE(0).toString() / 1000;
-
-                calcTargetPanAngle(targetLatitude, targetLongitude)
-                // console.log('targetLatitude, targetLongitude, targetAltitude, targetRelativeAltitude', targetLatitude, targetLongitude, targetAltitude, targetRelativeAltitude);
-
-            }
-        }
-        catch (e) {
-            console.log('[Target drone connect Error]', e);
-        }
-        // }
-    });
-
-    testmqtt.on('error', function (err) {
-        console.log('[local mqtt connect error] ' + err.message);
-        testmqtt = null;
-        setTimeout(testMqttConnect, 1000);
-    });
-}
 //---------------------------------------------------
-
 let constrain = (_in, _min, _max) => {
     if (_in < _min) {
         return _min;
@@ -546,7 +462,7 @@ function calcTargetPanAngle(targetLatitude, targetLongitude) {
     let y = Math.sin(radTargetLongitude - radMyLongitude) * Math.cos(radTargetLatitude);
     let x = Math.cos(radmyLatitude) * Math.sin(radTargetLatitude) - Math.sin(radmyLatitude) * Math.cos(radTargetLatitude) * Math.cos(radTargetLongitude - radMyLongitude);
     let θ = Math.atan2(y, x); // azimuth angle (radians)
-    // console.log(bearing);
+
     turn_angle = (θ * 180 / Math.PI + 360) % 360; // azimuth angle (convert to degree)
 
     if (run_flag === 'reset') {
