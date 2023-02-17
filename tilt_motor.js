@@ -93,7 +93,7 @@ function canPortOpening() {
 }
 
 function canPortOpen() {
-    console.log('canPort open. ' + can_port_num + ' Data rate: ' + can_baudrate);
+    console.log('[tilt] canPort open. ' + can_port_num + ' Data rate: ' + can_baudrate);
 
     localMqttConnect(local_mqtt_host);
 
@@ -103,7 +103,7 @@ function canPortOpen() {
 
     setInterval(() => {
         localmqtt.publish(pub_motor_position_topic, (p_out * 180 / Math.PI).toString(), () => {
-            // console.log('send Motor angle to GCS value: ', p_out * 180 / Math.PI)
+            // console.log('[tilt] send Motor angle to GCS value: ', p_out * 180 / Math.PI)
         });
     }, 500);
 
@@ -174,12 +174,12 @@ function canPortOpen() {
                     no_response_count = 0;
 
                     motor_return_msg = '';
-                    // console.log(p_target, p_in, p_out, v_out, t_out);
+                    // console.log('[tilt] ' + p_target, p_in, p_out, v_out, t_out);
                 }
             }
 
             if (no_response_count > 48) {
-                console.log('no_response_count', no_response_count);
+                console.log('[tilt] no_response_count', no_response_count);
                 no_response_count = 0;
                 motormode = 2;
             }
@@ -195,11 +195,9 @@ function canPortOpen() {
                     unpack_reply();
 
                     motor_return_msg = '';
-                    console.log('ExitMotorMode1', p_in, p_out, v_out, t_out);
+                    console.log('[tilt] motor mode exit', p_in, p_out, v_out, t_out);
 
                     p_in = p_out + p_offset;
-
-                    console.log('ExitMotorMode2', p_in, p_out, v_out, t_out);
                 }
             }, 500)
         }
@@ -214,11 +212,11 @@ function canPortClose() {
 
 function canPortError(error) {
     let error_str = error.toString();
-    console.log('[canPort error]: ' + error.message);
+    console.log('[tilt canPort error]: ' + error.message);
     if (error_str.substring(0, 14) == "Error: Opening") {
 
     } else {
-        console.log('canPort error : ' + error);
+        console.log('[tilt] canPort error : ' + error);
     }
 
     setTimeout(canPortOpening, 2000);
@@ -251,13 +249,13 @@ function localMqttConnect(host) {
 
     localmqtt.on('connect', function () {
         localmqtt.subscribe(sub_drone_data_topic + '/#', () => {
-            console.log('localmqtt subscribed -> ', sub_drone_data_topic);
+            console.log('[tilt] localmqtt subscribed -> ', sub_drone_data_topic);
         });
         localmqtt.subscribe(sub_motor_control_topic + '/#', () => {
-            console.log('localmqtt subscribed -> ', sub_motor_control_topic);
+            console.log('[tilt] localmqtt subscribed -> ', sub_motor_control_topic);
         });
         localmqtt.subscribe(gps_location_topic + '/#', () => {
-            console.log('localmqtt subscribed -> ', gps_location_topic);
+            console.log('[tilt] localmqtt subscribed -> ', gps_location_topic);
         });
     });
 
@@ -269,8 +267,8 @@ function localMqttConnect(host) {
             // console.log(topic, motor_control_message);
         } else if (topic === sub_drone_data_topic || topic === gps_location_topic) {
             localmqtt_message = message.toString('hex');
-            // console.log("Client1 topic => " + topic);
-            // console.log("Client1 message => " + drone_message);
+            // console.log("[tilt] Client1 topic => " + topic);
+            // console.log("[tilt] Client1 message => " + drone_message);
 
             try {
                 let ver = localmqtt_message.substring(0, 2);
@@ -305,7 +303,7 @@ function localMqttConnect(host) {
                         myLongitude = Buffer.from(lon, 'hex').readInt32LE(0).toString() / 10000000;
                         myAltitude = Buffer.from(alt, 'hex').readInt32LE(0).toString() / 1000;
                         myRelativeAltitude = Buffer.from(relative_alt, 'hex').readInt32LE(0).toString() / 1000;
-                        // console.log('myLatitude, myLongitude, myAltitude, myRelativeAltitude', myLatitude, myLongitude, myAltitude, myRelativeAltitude);
+                        // console.log('[tilt] myLatitude, myLongitude, myAltitude, myRelativeAltitude', myLatitude, myLongitude, myAltitude, myRelativeAltitude);
 
                     } else {
                         target_latitude = Buffer.from(lat, 'hex').readInt32LE(0).toString() / 10000000;
@@ -314,19 +312,19 @@ function localMqttConnect(host) {
                         target_relative_altitude = Buffer.from(relative_alt, 'hex').readInt32LE(0).toString() / 1000;
 
                         calcTargetTiltAngle(target_latitude, target_longitude, target_relative_altitude);
-                        // console.log('target_latitude, target_longitude, target_altitude, target_relative_altitude', target_latitude, target_longitude, target_altitude, target_relative_altitude);
+                        // console.log('[tilt] target_latitude, target_longitude, target_altitude, target_relative_altitude', target_latitude, target_longitude, target_altitude, target_relative_altitude);
 
                     }
                 }
             }
             catch (e) {
-                console.log('[Target drone connect Error]', e);
+                console.log('[tilt Target drone connect Error]', e);
             }
         }
     });
 
     localmqtt.on('error', function (err) {
-        console.log('[local mqtt connect error] ' + err.message);
+        console.log('[tilt local mqtt connect error] ' + err.message);
         localmqtt = null;
         setTimeout(localMqttConnect, 1000, local_mqtt_host);
     });
@@ -411,10 +409,10 @@ function pack_cmd() {
     let t_int_hex = t_int.toString(16).padStart(3, '0');
 
     let msg_buf = TILT_CAN_ID + p_int_hex + v_int_hex + kp_int_hex + kd_int_hex + t_int_hex;
-    //console.log('Can Port Send Data ===> ' + msg_buf);
+    //console.log('[tilt] Can Port Send Data ===> ' + msg_buf);
 
     can_port.write(Buffer.from(msg_buf, 'hex'), () => {
-        // console.log('can write =>', msg_buf);
+        // console.log('[tilt] can write =>', msg_buf);
     });
 }
 
