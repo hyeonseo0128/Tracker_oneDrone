@@ -100,10 +100,9 @@ function canPortOpening() {
 }
 
 function canPortOpen() {
-    console.log('canPort open. ' + can_port_num + ' Data rate: ' + can_baudrate);
+    console.log('[pan] canPort open. ' + can_port_num + ' Data rate: ' + can_baudrate);
 
     localMqttConnect(local_mqtt_host);
-    testMqttConnect();
 
     setTimeout(() => {
         motor_control_message = 'init';
@@ -182,7 +181,7 @@ function canPortOpen() {
                     no_response_count = 0;
 
                     motor_return_msg = '';
-                    // console.log(p_target, p_in, p_out, v_out, t_out);
+                    // console.log('[pan] ' + p_target, p_in, p_out, v_out, t_out);
                 }
             }
 
@@ -203,11 +202,9 @@ function canPortOpen() {
                     unpack_reply();
 
                     motor_return_msg = '';
-                    console.log('ExitMotorMode1', p_in, p_out, v_out, t_out);
+                    console.log('[pan] motor mode exit', p_in, p_out, v_out, t_out);
 
                     p_in = p_out + p_offset;
-
-                    console.log('ExitMotorMode2', p_in, p_out, v_out, t_out);
                 }
             }, 500)
         }
@@ -222,11 +219,11 @@ function canPortClose() {
 
 function canPortError(error) {
     let error_str = error.toString();
-    console.log('[canPort error]: ' + error.message);
+    console.log('[pan canPort error]: ' + error.message);
     if (error_str.substring(0, 14) == "Error: Opening") {
 
     } else {
-        console.log('canPort error : ' + error);
+        console.log('[pan] canPort error : ' + error);
     }
 
     setTimeout(canPortOpening, 2000);
@@ -259,13 +256,13 @@ function localMqttConnect(host) {
 
     localmqtt.on('connect', function () {
         localmqtt.subscribe(sub_drone_data_topic + '/#', () => {
-            console.log('localmqtt subscribed -> ', sub_drone_data_topic);
+            console.log('[pan] localmqtt subscribed -> ', sub_drone_data_topic);
         });
         localmqtt.subscribe(sub_motor_control_topic + '/#', () => {
-            console.log('localmqtt subscribed -> ', sub_motor_control_topic);
+            console.log('[pan] localmqtt subscribed -> ', sub_motor_control_topic);
         });
         localmqtt.subscribe(gps_location_topic + '/#', () => {
-            console.log('localmqtt subscribed -> ', gps_location_topic);
+            console.log('[pan] localmqtt subscribed -> ', gps_location_topic);
         });
     });
 
